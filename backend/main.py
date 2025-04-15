@@ -5,9 +5,19 @@ from database import SessionLocal, engine
 from models import Base, User, Reservation
 from pydantic import BaseModel
 import hashlib
+from fastapi.middleware.cors import CORSMiddleware
 
-Base.metadata.create_all(bind=engine)
 app = FastAPI()
+
+# 🔓 Aggiungi CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # o limita a ["http://localhost:8000"]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+Base.metadata.create_all(bind=engine)
 
 # DB session
 def get_db():

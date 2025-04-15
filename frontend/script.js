@@ -18,21 +18,21 @@ document.addEventListener('DOMContentLoaded', function () {
     // Carica eventi dal backend
     events: async function (fetchInfo, successCallback, failureCallback) {
       try {
-        const response = await fetch('http://127.0.0.1:8000/reservations');
-        const data = await response.json();
-        const events = data.map(res => ({
-          title: `Prenotato da ${res.user}`,
-          start: res.start_time,
-          end: res.end_time
+        const res = await fetch("http://127.0.0.1:8000/reservations");
+        const data = await res.json();
+        const events = data.map(r => ({
+          title: `Prenotato da ${r.user}`,
+          start: r.start_time,
+          end: r.end_time
         }));
         successCallback(events);
       } catch (error) {
-        alert("Errore nel caricamento delle prenotazioni.");
+        console.error("Errore nel caricamento eventi:", error);
         failureCallback(error);
       }
     },
 
-    // Quando selezioni uno slot
+    // Crea nuova prenotazione al click
     select: async function (info) {
       const username = prompt("Inserisci il tuo username:");
       if (!username) {
@@ -40,7 +40,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
 
-      // Controlla se ci sono già 3 prenotazioni sovrapposte
       try {
         const res = await fetch("http://127.0.0.1:8000/reserve", {
           method: "POST",
@@ -54,17 +53,17 @@ document.addEventListener('DOMContentLoaded', function () {
           })
         });
 
+        const result = await res.json();
+
         if (!res.ok) {
-          const error = await res.json();
-          alert("Errore: " + error.detail);
+          alert("Errore: " + result.detail);
         } else {
           alert("Prenotazione effettuata!");
-          calendar.refetchEvents(); // Ricarica gli eventi dal backend
+          calendar.refetchEvents(); // aggiorna il calendario
         }
-
-      } catch (err) {
-        alert("Errore nella connessione al server.");
-        console.error(err);
+      } catch (error) {
+        alert("Errore di rete o server non raggiungibile.");
+        console.error(error);
       }
 
       calendar.unselect();
