@@ -1,2 +1,0 @@
-# Tabelle (utenti e prenotazioni)
-
