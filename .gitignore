@@ -1,0 +1,19 @@
+# Ignora l'ambiente virtuale
+venv/
+
+# File di configurazione editor
+.vscode/
+.idea/
+
+# File di sistema macOS
+.DS_Store
+
+# Pycache
+__pycache__/
+*.py[cod]
+
+# Database SQLite (se lo usassi in futuro)
+*.sqlite3
+
+# Log temporanei
+*.log
