@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calendario Palestra</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+    }
+    #calendar {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Calendario Palestra Collegio</h1>
+  <div id="calendar"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const calendarEl = document.getElementById('calendar');
+
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        locale: 'it',
+        slotMinTime: '08:00:00',
+        slotMaxTime: '23:00:00',
+        allDaySlot: false,
+        editable: false,
+        selectable: true,
+        eventOverlap: true,
+
+        events: async function (fetchInfo, successCallback, failureCallback) {
+          try {
+            const res = await fetch('/reservations');
+            const data = await res.json();
+            const events = data.map(ev => ({
+              title: ev.username,
+              start: ev.start_time,
+              end: ev.end_time
+            }));
+            successCallback(events);
+          } catch (err) {
+            alert('Errore nel recupero delle prenotazioni');
+            failureCallback(err);
+          }
+        },
+
+        select: async function (info) {
+          const username = prompt("Inserisci il tuo username:");
+          if (!username) return;
+
+          const response = await fetch('/reserve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: username,
+              start_time: info.startStr,
+              end_time: info.endStr
+            })
+          });
+
+          if (response.ok) {
+            alert('Prenotazione effettuata con successo');
+            calendar.refetchEvents();
+          } else {
+            const error = await response.text();
+            alert('Errore: ' + error);
+          }
+        }
+      });
+
+      calendar.render();
+    });
+  </script>
+</body>
+</html>

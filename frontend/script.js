@@ -18,12 +18,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // Carica eventi dal backend
     events: async function (fetchInfo, successCallback, failureCallback) {
       try {
-        const res = await fetch("http://127.0.0.1:8000/reservations");
+        const res = await fetch("http://127.0.0.1:8000/reservations/summary");
         const data = await res.json();
-        const events = data.map(r => ({
-          title: `Prenotato da ${r.user}`,
-          start: r.start_time,
-          end: r.end_time
+        const events = data.map(e => ({
+          title: `Prenotati: ${e.count}`,
+          start: e.start,
+          end: e.end,
+          color: e.count >= 3 ? 'red' : 'green'
         }));
         successCallback(events);
       } catch (error) {

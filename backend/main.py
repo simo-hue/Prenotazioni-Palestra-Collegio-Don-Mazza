@@ -5,9 +5,18 @@ from database import SessionLocal, engine
 from models import Base, User, Reservation
 from pydantic import BaseModel
 import hashlib
+from sqlalchemy.orm import joinedload
+from schemas import UserBase
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import HTTPException
+from pydantic import BaseModel
+from fastapi.staticfiles import StaticFiles
+
+logged_in_user = None
+
 
 app = FastAPI()
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 # 🔓 Aggiungi CORS
 app.add_middleware(
@@ -36,11 +45,17 @@ class UserLogin(BaseModel):
     username: str
     password: str
 
-class ReservationCreate(BaseModel):
-    username: str
+class ReservationBase(BaseModel):
     start_time: datetime
     end_time: datetime
 
+class ReservationCreate(ReservationBase):
+    username: str
+
+class LoginData(BaseModel):
+    username: str
+    password: str
+    
 # Registrazione
 @app.post("/register")
 def register(user: UserCreate, db: Session = Depends(get_db)):
@@ -57,13 +72,27 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 # Login (basic check)
 @app.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
+    global logged_in_user
     hashed_password = hashlib.sha256(user.password.encode()).hexdigest()
     db_user = db.query(User).filter(User.username == user.username, User.password == hashed_password).first()
-    if not db_user:
-        raise HTTPException(status_code=401, detail="Credenziali non valide.")
-    return {"msg": "Login effettuato!"}
+    if db_user:
+        logged_in_user = db_user.username
+        return {"message": "Login effettuato con successo", "username": logged_in_user}
+    else:
+        return JSONResponse(status_code=401, content={"message": "Credenziali non valide"})
 
-# Crea prenotazione
+@app.get("/logged_in")
+def is_logged_in():
+    if logged_in_user:
+        return {"logged_in": True, "username": logged_in_user}
+    return {"logged_in": False}
+
+@app.post("/logout")
+def logout():
+    global logged_in_user
+    logged_in_user = None
+    return {"message": "Logout effettuato"}
+
 @app.post("/reserve")
 def reserve(res: ReservationCreate, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == res.username).first()
@@ -87,11 +116,11 @@ def reserve(res: ReservationCreate, db: Session = Depends(get_db)):
 # Elenco prenotazioni
 @app.get("/reservations")
 def get_reservations(db: Session = Depends(get_db)):
-    reservations = db.query(Reservation).all()
+    reservations = db.query(Reservation).options(joinedload(Reservation.user)).all()
     return [
         {
             "id": r.id,
-            "user": r.user.username,
+            "user": r.user.username if r.user else "Utente sconosciuto",
             "start_time": r.start_time,
             "end_time": r.end_time
         }
