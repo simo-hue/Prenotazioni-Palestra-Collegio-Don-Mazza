@@ -99,4 +99,4 @@ uvicorn main:app --reload
 
 ## 👨‍💻 Autori
 
-Progetto sviluppato con ❤️ da studenti del Collegio Don Mazza.
+Progetto sviluppato con ❤️ da Simone Mattioli per gli studenti del Collegio Don Mazza.
